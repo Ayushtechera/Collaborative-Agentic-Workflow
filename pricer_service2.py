@@ -1,11 +1,11 @@
 import modal
 from modal import Volume, Image
 # Setup - define our infrastructure with code!
-
 app = modal.App("pricer-service")
 image = Image.debian_slim().pip_install(
     "huggingface", "torch", "transformers", "bitsandbytes", "accelerate", "peft"
 )
+
 
 # This collects the secret from Modal.
 # Depending on your Modal configuration, you may need to replace "huggingface-secret" with "hf-secret"

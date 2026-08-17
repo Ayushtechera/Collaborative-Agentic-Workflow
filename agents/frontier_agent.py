@@ -3,13 +3,12 @@ from typing import List, Dict
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from agents.agent import Agent
-
+import os 
 
 class FrontierAgent(Agent):
     name = "Frontier Agent"
     color = Agent.BLUE
-
-    MODEL = "gpt-4o-mini"
+    MODEL = "llama-3.3-70b-versatile"
 
     def __init__(self, collection):
         """
@@ -17,9 +16,12 @@ class FrontierAgent(Agent):
         And setting up the vector encoding model
         """
         self.log("Initializing Frontier Agent")
-        self.client = OpenAI()
-        self.MODEL = "gpt-5.1"
-        self.log("Frontier Agent is setting up with OpenAI")
+        self.client = OpenAI(
+            api_key=os.getenv("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1"
+        )
+        self.MODEL = "llama-3.3-70b-versatile"
+        self.log("Frontier Agent is setting up with GroqAI")
         self.collection = collection
         self.model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
         self.log("Frontier Agent is ready")
@@ -36,20 +38,22 @@ class FrontierAgent(Agent):
             message += f"Potentially related product:\n{similar}\nPrice is ${price:.2f}\n\n"
         return message
 
+
     def messages_for(
         self, description: str, similars: List[str], prices: List[float]
     ) -> List[Dict[str, str]]:
         """
-        Create the message list to be included in a call to OpenAI
+        Create the message list to be included in a call to GroqAI
         With the system and user prompt
         :param description: a description of the product
         :param similars: similar products to this one
         :param prices: prices of similar products
-        :return: the list of messages in the format expected by OpenAI
+        :return: the list of messages in the format expected by GroqAI
         """
         message = f"Estimate the price of this product. Respond with the price, no explanation\n\n{description}\n\n"
         message += self.make_context(similars, prices)
         return [{"role": "user", "content": message}]
+
 
     def find_similars(self, description: str):
         """
@@ -65,6 +69,7 @@ class FrontierAgent(Agent):
         self.log("Frontier Agent has found similar products")
         return documents, prices
 
+
     def get_price(self, s) -> float:
         """
         A utility that plucks a floating point number out of a string
@@ -73,9 +78,10 @@ class FrontierAgent(Agent):
         match = re.search(r"[-+]?\d*\.\d+|\d+", s)
         return float(match.group()) if match else 0.0
 
+
     def price(self, description: str) -> float:
         """
-        Make a call to OpenAI or DeepSeek to estimate the price of the described product,
+        Make a call to GroqAI or DeepSeek to estimate the price of the described product,
         by looking up 5 similar products and including them in the prompt to give context
         :param description: a description of the product
         :return: an estimate of the price

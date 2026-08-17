@@ -38,3 +38,4 @@ class EnsembleAgent(Agent):
         combined = frontier * 0.8 + specialist * 0.1 + neural_network * 0.1
         self.log(f"Ensemble Agent complete - returning ${combined:.2f}")
         return combined
+ 

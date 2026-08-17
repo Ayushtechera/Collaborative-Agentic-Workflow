@@ -56,11 +56,9 @@ class DeepNeuralNetwork(nn.Module):
             x = block(x)
 
         return self.output_layer(x)
-
-
+    
 Y_STD = 1.0328539609909058
 Y_MEAN = 4.434937953948975
-
 
 class DeepNeuralNetworkInference:
     def __init__(self):

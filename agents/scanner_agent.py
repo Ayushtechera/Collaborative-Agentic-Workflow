@@ -2,10 +2,10 @@ from typing import Optional, List
 from openai import OpenAI
 from agents.deals import ScrapedDeal, DealSelection
 from agents.agent import Agent
-
+import os
 
 class ScannerAgent(Agent):
-    MODEL = "gpt-5-mini"
+    MODEL = "llama-3.3-70b-versatile"
 
     SYSTEM_PROMPT = """You identify and summarize the 5 most detailed deals from a list, by selecting deals that have the most detailed, high quality description and the most clear price.
     Respond strictly in JSON with no explanation, using this format. You should provide the price as a number derived from the description. If the price of a deal isn't clear, do not include that deal in your response.
@@ -19,20 +19,21 @@ class ScannerAgent(Agent):
     Be careful with products that are described as "$XXX off" or "reduced by $XXX" - this isn't the actual price of the product. Only respond with products when you are highly confident about the price. 
     
     Deals:
-    
     """
 
     USER_PROMPT_SUFFIX = "\n\nInclude exactly 5 deals, no more."
-
     name = "Scanner Agent"
     color = Agent.CYAN
 
     def __init__(self):
         """
-        Set up this instance by initializing OpenAI
+        Set up this instance by initializing GroqAI
         """
         self.log("Scanner Agent is initializing")
-        self.openai = OpenAI()
+        self.openai = OpenAI(
+            api_key=os.getenv("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1"
+        )
         self.log("Scanner Agent is ready")
 
     def fetch_deals(self, memory) -> List[ScrapedDeal]:
@@ -58,7 +59,7 @@ class ScannerAgent(Agent):
 
     def scan(self, memory: List[str] = []) -> Optional[DealSelection]:
         """
-        Call OpenAI to provide a high potential list of deals with good descriptions and prices
+        Call GroqAI to provide a high potential list of deals with good descriptions and prices
         Use StructuredOutputs to ensure it conforms to our specifications
         :param memory: a list of URLs representing deals already raised
         :return: a selection of good deals, or None if there aren't any
@@ -66,7 +67,7 @@ class ScannerAgent(Agent):
         scraped = self.fetch_deals(memory)
         if scraped:
             user_prompt = self.make_user_prompt(scraped)
-            self.log("Scanner Agent is calling OpenAI using Structured Outputs")
+            self.log("Scanner Agent is calling GroqAI using Structured Outputs")
             result = self.openai.chat.completions.parse(
                 model=self.MODEL,
                 messages=[
@@ -88,6 +89,7 @@ class ScannerAgent(Agent):
         """
         Return a test DealSelection, to be used during testing
         """
+        
         results = {
             "deals": [
                 {
